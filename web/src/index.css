@@ -1,0 +1,288 @@
+:root {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.container {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+h2 {
+  font-size: 1.1rem;
+  margin: 28px 0 12px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  padding: 8px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+button:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+button.primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+button.primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+button.danger {
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+button.danger:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.form-card {
+  margin-top: 20px;
+}
+
+.form-card h2 {
+  margin-top: 0;
+}
+
+.form-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 720px) {
+  .form-grid {
+    grid-template-columns: 2fr 1.2fr 1fr;
+  }
+}
+
+.field label {
+  display: block;
+  font-size: 0.85rem;
+  color: #475569;
+  margin-bottom: 4px;
+}
+
+.field input {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font: inherit;
+  background: #ffffff;
+}
+
+.field input:focus {
+  outline: 2px solid #93c5fd;
+  outline-offset: 1px;
+  border-color: #2563eb;
+}
+
+.field-error {
+  color: #b91c1c;
+  font-size: 0.8rem;
+  margin: 4px 0 0;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.alert-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.alert-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.alert-item h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.meta {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.price {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.banner.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.muted {
+  color: #64748b;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nav {
+  display: flex;
+  gap: 4px;
+}
+
+.nav a {
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #475569;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.nav a:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.nav a.active {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.product-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.product-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.product-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.product-card .meta {
+  margin: 0;
+}
+
+.product-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #f1f5f9;
+}
+
+.product-description {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-link {
+  display: block;
+  margin-top: auto;
+  padding: 8px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  text-align: center;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.product-link:hover {
+  background: #f1f5f9;
+}

@@ -1,0 +1,23 @@
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+.env
+.env.local
+.env.*.local
+
+*.log
+npm-debug.log*
+
+.DS_Store
+.idea/
+.vscode/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Playwright persistent browser profile (Facebook session)
+.browser-profile/

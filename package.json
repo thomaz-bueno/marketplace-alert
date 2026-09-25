@@ -1,0 +1,19 @@
+{
+  "name": "marketplace-alert",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local personal application that monitors Facebook Marketplace for products matching user-created alerts.",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --workspace server",
+    "dev:web": "npm run dev --workspace web",
+    "build": "npm run build --workspace server && npm run build --workspace web",
+    "typecheck": "npm run typecheck --workspace server && npm run typecheck --workspace web",
+    "browser:check": "npm run browser:check --workspace server",
+    "browser:login": "npm run browser:login --workspace server",
+    "scrape:check": "npm run scrape:check --workspace server"
+  }
+}
