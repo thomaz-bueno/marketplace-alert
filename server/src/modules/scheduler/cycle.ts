@@ -49,23 +49,33 @@ function errorMessage(error: unknown): string {
 }
 
 /**
- * Runs the scrapers for every alert. Kept as the single concurrency point so
- * a bounded pool can replace the unbounded allSettled later without touching
- * the rest of the cycle.
+ * Runs the scrapers for every alert sequentially. All alerts share the
+ * browser's single tab, so they must not run concurrently; per-alert
+ * failures are still isolated as rejected results, matching the
+ * PromiseSettledResult contract consumed by the cycle.
  */
 async function scrapeAll(
   alerts: Alert[],
   scrape: ScrapeFn,
 ): Promise<PromiseSettledResult<Product[]>[]> {
-  return Promise.allSettled(alerts.map((alert) => scrape(alert)));
+  const settled: PromiseSettledResult<Product[]>[] = [];
+  for (const alert of alerts) {
+    try {
+      settled.push({ status: "fulfilled", value: await scrape(alert) });
+    } catch (reason) {
+      settled.push({ status: "rejected", reason });
+    }
+  }
+  return settled;
 }
 
 /**
  * One complete scraping cycle: lock -> clear Redis -> load alerts ->
- * scrape (concurrently) -> isolate failures -> filter -> dedupe -> save ->
- * finish. Returns "skipped" when another cycle is still running (in-memory
- * lock, single process). Infrastructure failures (Redis/Postgres) reject so
- * callers can surface them; per-alert failures are isolated inside.
+ * scrape (sequentially, in a single browser tab) -> isolate failures ->
+ * filter -> dedupe -> save -> finish. Returns "skipped" when another cycle
+ * is still running (in-memory lock, single process). Infrastructure failures
+ * (Redis/Postgres) reject so callers can surface them; per-alert failures are
+ * isolated inside.
  */
 export async function runCycle(options: CycleOptions = {}): Promise<CycleOutcome> {
   const trigger = options.trigger ?? "manual";

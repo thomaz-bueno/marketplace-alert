@@ -1,5 +1,5 @@
 import type { Page } from "playwright";
-import { detectLoginRequired, getBrowserContext } from "../../infrastructure/browser";
+import { detectLoginRequired, getScrapePage } from "../../infrastructure/browser";
 import type { Alert } from "../alerts";
 import { dedupeProducts, type Product } from "../products";
 import { ScrapeError } from "./errors";
@@ -135,79 +135,77 @@ async function loadDetail(
  * scrape untrustworthy (login wall, unusable page, all detail loads failed)
  * throw ScrapeError so the scheduler can isolate them per alert; legitimate
  * empty results simply return [].
+ *
+ * All alerts share the session's single tab; the scheduler runs alerts
+ * sequentially, so navigations never overlap on this page.
  */
 export async function scrapeAlert(alert: Alert): Promise<Product[]> {
-  const context = await getBrowserContext();
-  const page = await context.newPage();
+  const page = await getScrapePage();
 
-  try {
-    const rawCards = await openSearch(page, alert);
+  const rawCards = await openSearch(page, alert);
 
-    const candidates: ListingCandidate[] = [];
-    let prefiltered = 0;
-    for (const raw of rawCards) {
-      const candidate = parseCard(raw);
-      if (!candidate) continue;
-      if (candidate.location !== "" && !matchesCity(candidate.location, alert.city)) {
-        prefiltered += 1;
-        continue;
-      }
-      const quickPrice = extractPrice(candidate.priceText, candidate.title, null);
-      if (quickPrice !== null && quickPrice > alert.maxPrice) {
-        prefiltered += 1;
-        continue;
-      }
-      candidates.push(candidate);
+  const candidates: ListingCandidate[] = [];
+  let prefiltered = 0;
+  for (const raw of rawCards) {
+    const candidate = parseCard(raw);
+    if (!candidate) continue;
+    if (candidate.location !== "" && !matchesCity(candidate.location, alert.city)) {
+      prefiltered += 1;
+      continue;
     }
-
-    const products: Product[] = [];
-    let detailFailures = 0;
-    for (const candidate of candidates) {
-      const detail = await loadDetail(page, candidate);
-      if (!detail) {
-        detailFailures += 1;
-        continue;
-      }
-
-      const price =
-        extractPrice(
-          candidate.priceText || detail.priceText,
-          candidate.title,
-          detail.description,
-        ) ?? detail.priceAmount;
-      if (price === null || price > alert.maxPrice) continue;
-
-      const location = candidate.location || detail.location;
-      if (!matchesCity(location, alert.city)) continue;
-
-      products.push({
-        id: candidate.id,
-        title: detail.title || candidate.title,
-        price,
-        location,
-        image: candidate.image,
-        url: candidate.url,
-        seller: detail.seller,
-        description: detail.description,
-        createdAt: detail.createdAt,
-      });
+    const quickPrice = extractPrice(candidate.priceText, candidate.title, null);
+    if (quickPrice !== null && quickPrice > alert.maxPrice) {
+      prefiltered += 1;
+      continue;
     }
-
-    if (candidates.length > 0 && detailFailures === candidates.length) {
-      throw new ScrapeError(
-        `all ${detailFailures} detail page(s) failed while scraping alert ${alert.id}`,
-        alert.id,
-      );
-    }
-
-    const unique = dedupeProducts(products);
-    console.log(
-      `[scraper] alert ${alert.id}: ${rawCards.length} card(s) -> ` +
-        `${candidates.length} candidate(s) -> ${unique.length} product(s) ` +
-        `(prefiltered ${prefiltered}, detail failures ${detailFailures})`,
-    );
-    return unique;
-  } finally {
-    await page.close().catch(() => undefined);
+    candidates.push(candidate);
   }
+
+  const products: Product[] = [];
+  let detailFailures = 0;
+  for (const candidate of candidates) {
+    const detail = await loadDetail(page, candidate);
+    if (!detail) {
+      detailFailures += 1;
+      continue;
+    }
+
+    const price =
+      extractPrice(
+        candidate.priceText || detail.priceText,
+        candidate.title,
+        detail.description,
+      ) ?? detail.priceAmount;
+    if (price === null || price > alert.maxPrice) continue;
+
+    const location = candidate.location || detail.location;
+    if (!matchesCity(location, alert.city)) continue;
+
+    products.push({
+      id: candidate.id,
+      title: detail.title || candidate.title,
+      price,
+      location,
+      image: candidate.image,
+      url: candidate.url,
+      seller: detail.seller,
+      description: detail.description,
+      createdAt: detail.createdAt,
+    });
+  }
+
+  if (candidates.length > 0 && detailFailures === candidates.length) {
+    throw new ScrapeError(
+      `all ${detailFailures} detail page(s) failed while scraping alert ${alert.id}`,
+      alert.id,
+    );
+  }
+
+  const unique = dedupeProducts(products);
+  console.log(
+    `[scraper] alert ${alert.id}: ${rawCards.length} card(s) -> ` +
+      `${candidates.length} candidate(s) -> ${unique.length} product(s) ` +
+      `(prefiltered ${prefiltered}, detail failures ${detailFailures})`,
+  );
+  return unique;
 }

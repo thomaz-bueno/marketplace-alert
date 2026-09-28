@@ -278,8 +278,9 @@ Folders are created only when there is meaningful code for them.
   this project runs on Node 18, and v3 is CommonJS which matches the server's
   module system.
 - **Cycle** (`modules/scheduler/cycle.ts`, `runCycle()`): lock → clear Redis
-  products → load alerts from Postgres → scrape all alerts concurrently →
-  isolate failures → filter (city + max price, per alert) → dedupe → save each
+  products → load alerts from Postgres → scrape all alerts sequentially in a
+  single shared browser tab → isolate failures → filter (city + max price, per
+  alert) → dedupe → save each
   alert's products to Redis → structured summary. Legitimate empty results are
   saved as an empty collection (the previous cycle's products are replaced),
   so Redis always reflects the last cycle only.
@@ -287,11 +288,12 @@ Folders are created only when there is meaningful code for them.
   A trigger arriving while a cycle runs logs the skip and returns
   `{ status: "skipped" }`; the manual endpoint maps that to `409`, the cron
   trigger just logs it. Overlapping cycles can never interleave in Redis.
-- **Failure isolation**: alerts are scraped with `Promise.allSettled`, so one
-  alert's `ScrapeError` (or any rejection) is recorded in the cycle summary
-  and logged while every other alert still runs and saves. `scrapeAll()` is
-  the single concurrency point, so a bounded pool can replace the unbounded
-  `allSettled` later without touching the cycle logic.
+- **Failure isolation**: alerts are scraped sequentially with per-alert
+  try/catch, producing the same settled results as `Promise.allSettled`, so
+  one alert's `ScrapeError` (or any rejection) is recorded in the cycle
+  summary and logged while every other alert still runs and saves.
+  `scrapeAll()` is the single point that serializes alerts, because they all
+  share one browser tab (`getScrapePage()` reuses the session tab).
 - **Manual trigger**: `POST /api/scheduler/run` runs the *same* `runCycle()`
   the cron runs (trigger=manual) and responds with the cycle summary — it
   never replaces the cron. `runCycle({ scrape })` accepts an injectable

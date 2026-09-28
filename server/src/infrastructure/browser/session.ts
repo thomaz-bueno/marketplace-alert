@@ -116,6 +116,16 @@ export function getSessionStats(): SessionStats {
   };
 }
 
+/**
+ * Returns the single shared page used for scraping. Reuses the session's
+ * first tab (the same one `openMarketplace` opens at startup), so the browser
+ * ever holds exactly one tab regardless of how many alerts a cycle processes.
+ */
+export async function getScrapePage(): Promise<Page> {
+  const context = await getBrowserContext();
+  return context.pages()[0] ?? (await context.newPage());
+}
+
 /** Detects whether Facebook is asking for authentication on the current page. */
 export async function detectLoginRequired(page: Page): Promise<boolean> {
   if (page.url().includes("facebook.com/login")) return true;

@@ -2,6 +2,7 @@ export {
   MARKETPLACE_URL,
   detectLoginRequired,
   getBrowserContext,
+  getScrapePage,
   getSessionStats,
   initBrowserSession,
   closeBrowserSession,

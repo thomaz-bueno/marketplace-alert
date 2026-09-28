@@ -110,7 +110,8 @@ npm run scrape:check   # parsing assertions + live search against the real page
 
 The backend runs a scraping cycle every 15 minutes (node-cron, expression in
 `CRON_SCHEDULE`). Each cycle clears the previous temporary products, loads all
-alerts from PostgreSQL, scrapes them concurrently, isolates per-alert failures,
+alerts from PostgreSQL, scrapes them sequentially in a single browser tab,
+isolates per-alert failures,
 filters by city and maximum price, deduplicates and saves the results to Redis.
 A cycle that is already running skips overlapping triggers (in-memory lock).
 

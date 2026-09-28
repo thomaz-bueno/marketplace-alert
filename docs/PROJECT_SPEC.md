@@ -93,8 +93,8 @@ interface Product {
 
 ## Concurrency
 
-All alerts are processed concurrently (`Promise.all`), structured so controlled
-concurrency can be introduced later. No queue system.
+All alerts are processed sequentially in a single shared browser tab (one
+navigation at a time). No queue system.
 
 ## Scheduler
 
