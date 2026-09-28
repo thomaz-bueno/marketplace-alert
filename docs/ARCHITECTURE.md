@@ -46,10 +46,11 @@ marketplace-alert/
 │   ├── migrations/         # numbered .sql migration files
 │   └── src/
 │       ├── config/         # environment/config loading
-│       ├── modules/        # alerts, products, scraper, scheduler (done); notifications (later)
+│       ├── modules/        # alerts, products, scraper, scheduler, notifications (done — Telegram)
 │       ├── infrastructure/ # postgres, redis, browser/session (playwright)
 │       ├── scripts/        # helpers: migrate, check-alerts, check-products,
-│       │                     # check-browser, check-scraper, login-facebook
+│       │                     # check-browser, check-scraper, check-telegram,
+│       │                     # check-telegram-retry, check-cycle-notify, login-facebook
 │       ├── app.ts          # Express app factory (no listen)
 │       └── server.ts       # process entrypoint (listen)
 ├── docs/
@@ -281,7 +282,9 @@ Folders are created only when there is meaningful code for them.
   products → load alerts from Postgres → scrape all alerts sequentially in a
   single shared browser tab → isolate failures → filter (city + max price, per
   alert) → dedupe → save each
-  alert's products to Redis → structured summary. Legitimate empty results are
+  alert's products to Redis → dedupe across alerts → send ONE logical
+  Telegram notification for the new products (bounded in-cycle retries,
+  none when nothing is new) → structured summary. Legitimate empty results are
   saved as an empty collection (the previous cycle's products are replaced),
   so Redis always reflects the last cycle only.
 - **Execution lock**: an in-memory boolean (single backend process by design).
@@ -308,7 +311,7 @@ Folders are created only when there is meaningful code for them.
   and a completion line carrying a JSON summary (`trigger`, counts,
   `durationMs`); skips log the trigger that was refused.
 - **Not implemented (per scope)**: product history, Postgres product storage,
-  queues, multiple workers, Web Push.
+  queues, multiple workers.
 
 ## Planned module boundaries
 
@@ -318,7 +321,7 @@ Folders are created only when there is meaningful code for them.
 | `products`       | Temporary products for the current cycle (**stage 3**)     | redis            |
 | `scraper`        | Playwright search + filtering (city, price, dedupe) (**stage 7**) | playwright, products |
 | `scheduler`      | Cron cycle, execution lock, orchestration (**stage 8**) | all modules      |
-| `notifications`  | Single Web Push per cycle                                  | web-push         |
+| `notifications`  | One Telegram batch per cycle: albums/text, bounded retries, Redis delivery tracking | redis, fetch (Bot API) |
 
 Business logic stays out of Express route handlers; scraping is isolated from HTTP;
 Redis and PostgreSQL access are isolated from their callers.

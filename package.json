@@ -14,6 +14,9 @@
     "typecheck": "npm run typecheck --workspace server && npm run typecheck --workspace web",
     "browser:check": "npm run browser:check --workspace server",
     "browser:login": "npm run browser:login --workspace server",
-    "scrape:check": "npm run scrape:check --workspace server"
+    "scrape:check": "npm run scrape:check --workspace server",
+    "telegram:check": "npm run telegram:check --workspace server",
+    "retry:check": "npm run retry:check --workspace server",
+    "cycle:check": "npm run cycle:check --workspace server"
   }
 }

@@ -8,6 +8,11 @@ const app = createApp();
 
 const server: Server = app.listen(config.port, () => {
   console.log(`[server] listening on http://localhost:${config.port}`);
+  console.log(
+    config.telegramEnabled
+      ? "[config] telegram notifications: enabled"
+      : `[config] telegram notifications: disabled (${config.telegramDisabledReason})`,
+  );
   void initBrowserSession();
   startScheduler();
 });

@@ -25,7 +25,7 @@ Every 15 minutes the backend:
 8. Deduplicates results within the current execution.
 9. Stores matching products in Redis.
 10. Makes those products available to the frontend.
-11. Sends one Web Push notification if products were found.
+11. Sends one Telegram notification when new products were found.
 
 The application is local, single-user, and has no authentication.
 
@@ -127,17 +127,20 @@ Single-page personal dashboard:
 - Products: one global list of the latest cycle results with image, title, price,
   location, and a link to open the listing.
 
-## Web Push
+## Telegram notifications
 
-- Only when the current cycle finds products.
-- 0 products → no notification.
-- 1+ products → exactly one notification per cycle
-  (e.g. `3 new Marketplace products found`).
+- Only when the current cycle finds products that were never notified.
+- 0 new products → no notification.
+- 1+ new products → exactly one logical notification per cycle, delivered as
+  photo albums (up to 10 photos) or HTML text messages with the details and
+  link of each product, with bounded in-cycle retries.
+- Delivered ids are remembered in Redis (`notified:products`); the guarantee
+  is at-least-once (a duplicate is preferred over a silent loss).
 
 ## Out of scope (MVP)
 
 Authentication, multiple users, admin panel, product history, PostgreSQL products
-table, favorites, WhatsApp/Telegram/email, analytics, recommendations, AI
+table, favorites, WhatsApp/email, analytics, recommendations, AI
 classification, geographic radius search, Kafka/RabbitMQ, Kubernetes,
 microservices, cloud infrastructure, payments, complex ranking, automated Facebook
 credentials or account creation.
@@ -153,4 +156,4 @@ credentials or account creation.
 7. Marketplace scraper
 8. Scheduler + complete scraping cycle
 9. Products UI
-10. Web Push + final hardening
+10. Telegram notifications + final hardening

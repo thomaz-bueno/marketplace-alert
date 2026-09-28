@@ -11,6 +11,9 @@
     "db:check": "tsx src/scripts/check-alerts.ts",
     "redis:check": "tsx src/scripts/check-products.ts",
     "scrape:check": "tsx src/scripts/check-scraper.ts",
+    "telegram:check": "tsx src/scripts/check-telegram.ts",
+    "retry:check": "tsx src/scripts/check-telegram-retry.ts",
+    "cycle:check": "tsx src/scripts/check-cycle-notify.ts",
     "browser:check": "tsx src/scripts/check-browser.ts",
     "browser:login": "tsx src/scripts/login-facebook.ts"
   },

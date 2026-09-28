@@ -24,6 +24,49 @@ function readBoolean(name: string, fallback: boolean): boolean {
   throw new Error(`Invalid ${name}: ${raw}`);
 }
 
+/**
+ * Telegram notifications are optional: when the variables are missing or
+ * invalid the backend keeps running with notifications disabled and a safe
+ * reason (never the token or chat id) for the startup log.
+ */
+function readTelegram(): {
+  botToken: string;
+  chatId: string;
+  enabled: boolean;
+  disabledReason: string | null;
+} {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim() ?? "";
+  const chatId = process.env.TELEGRAM_CHAT_ID?.trim() ?? "";
+
+  const disabled = (disabledReason: string) => ({
+    botToken,
+    chatId,
+    enabled: false,
+    disabledReason,
+  });
+
+  if (botToken === "" && chatId === "") {
+    return disabled("not configured");
+  }
+  if (botToken === "" || chatId === "") {
+    return disabled("TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID must both be set");
+  }
+  if (!/^\d+:\S+$/.test(botToken)) {
+    return disabled(
+      "TELEGRAM_BOT_TOKEN has an invalid format (expected <bot_id>:<secret>)",
+    );
+  }
+  if (!/^-?\d+$/.test(chatId) && !/^@[A-Za-z0-9_]{4,}$/.test(chatId)) {
+    return disabled(
+      "TELEGRAM_CHAT_ID must be a numeric id (groups are negative) or a @username",
+    );
+  }
+
+  return { botToken, chatId, enabled: true, disabledReason: null };
+}
+
+const telegram = readTelegram();
+
 export const config = {
   port: readPort("SERVER_PORT", 3000),
   databaseUrl: process.env.DATABASE_URL ?? "",
@@ -34,4 +77,8 @@ export const config = {
     process.env.BROWSER_USER_DATA_DIR?.trim() ||
     path.resolve(__dirname, "../../../.browser-profile"),
   cronSchedule: process.env.CRON_SCHEDULE?.trim() || "*/15 * * * *",
+  telegramBotToken: telegram.botToken,
+  telegramChatId: telegram.chatId,
+  telegramEnabled: telegram.enabled,
+  telegramDisabledReason: telegram.disabledReason,
 };

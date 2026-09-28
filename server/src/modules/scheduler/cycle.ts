@@ -1,7 +1,9 @@
 import { findAllAlerts, type Alert } from "../alerts";
+import { notifyNewProducts, type NotificationOutcome } from "../notifications";
 import {
   clearAllProducts,
   dedupeProducts,
+  getProducts,
   saveProducts,
   type Product,
 } from "../products";
@@ -30,6 +32,8 @@ export type CycleSummary = {
   saved: number;
   failed: number;
   products: number;
+  /** The single logical Telegram notification for this cycle. */
+  notification: NotificationOutcome;
   results: AlertCycleResult[];
 };
 
@@ -72,10 +76,13 @@ async function scrapeAll(
 /**
  * One complete scraping cycle: lock -> clear Redis -> load alerts ->
  * scrape (sequentially, in a single browser tab) -> isolate failures ->
- * filter -> dedupe -> save -> finish. Returns "skipped" when another cycle
- * is still running (in-memory lock, single process). Infrastructure failures
- * (Redis/Postgres) reject so callers can surface them; per-alert failures are
- * isolated inside.
+ * filter -> dedupe -> save -> dedupe across alerts -> send ONE logical
+ * Telegram notification for the accumulated new products -> finish.
+ * Returns "skipped" when another cycle is still running (in-memory lock,
+ * single process). Infrastructure failures (Redis/Postgres) reject so
+ * callers can surface them; per-alert failures are isolated inside, and
+ * notification problems are reported in `summary.notification` without
+ * rejecting, so the scheduler always survives a Telegram outage.
  */
 export async function runCycle(options: CycleOptions = {}): Promise<CycleOutcome> {
   const trigger = options.trigger ?? "manual";
@@ -104,6 +111,7 @@ export async function runCycle(options: CycleOptions = {}): Promise<CycleOutcome
     const settled = await scrapeAll(alerts, scrape);
 
     const results: AlertCycleResult[] = [];
+    const savedProducts: Product[] = [];
     let productCount = 0;
 
     for (const [index, outcome] of settled.entries()) {
@@ -126,7 +134,14 @@ export async function runCycle(options: CycleOptions = {}): Promise<CycleOutcome
       productCount += saved;
       results.push({ alertId: alert.id, status: "saved", products: saved });
       console.log(`[scheduler] cycle #${cycleId} alert ${alert.id} -> ${saved} product(s)`);
+
+      // Read back exactly what was stored (and is shown by the UI) so the
+      // notification batch can never diverge from the product snapshot.
+      savedProducts.push(...(await getProducts(alert.id)));
     }
+
+    const batch = dedupeProducts(savedProducts);
+    const notification = await notifyNewProducts(batch);
 
     const summary: CycleSummary = {
       cycleId,
@@ -137,6 +152,7 @@ export async function runCycle(options: CycleOptions = {}): Promise<CycleOutcome
       saved: results.filter((result) => result.status === "saved").length,
       failed: results.filter((result) => result.status === "failed").length,
       products: productCount,
+      notification,
       results,
     };
 
@@ -148,6 +164,7 @@ export async function runCycle(options: CycleOptions = {}): Promise<CycleOutcome
           saved: summary.saved,
           failed: summary.failed,
           products: summary.products,
+          notification: summary.notification,
         }),
     );
 
