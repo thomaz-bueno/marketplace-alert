@@ -244,3 +244,6 @@ unexpected server errors return a generic `500 {"error":"internal server error"}
 
 - `docs/PROJECT_SPEC.md` — product and technical specification
 - `docs/ARCHITECTURE.md` — architecture decisions
+
+
+readme
